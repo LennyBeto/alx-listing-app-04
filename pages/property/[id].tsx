@@ -1,28 +1,37 @@
-import { PROPERTYLISTINGSAMPLE } from "@/constants/index"; // import sample property data
-import { useRouter } from "next/router"; // for routing to dynamic page
-import PropertyDetail from "@/components/property/PropertyDetail"; // property detail section
-import BookingSection from "@/components/property/BookingSection"; // booking section
-import ReviewSection from "@/components/property/ReviewSection"; // review section
+import { useRouter } from "next/router";
+import axios from "axios";
+import { useState, useEffect } from "react";
+import PropertyDetail from "@/components/property/PropertyDetail";
 
-export default function PropertyPage() {
+export default function PropertyDetailPage() {
   const router = useRouter();
-  const { id } = router.query; // Get the property ID from the URL
-  const property = PROPERTYLISTINGSAMPLE.find((item) => item.name === id); // Find the property by name
+  const { id } = router.query;
+  const [property, setProperty] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!property) return <p>Property not found</p>; // Show if property doesn't exist
+  useEffect(() => {
+    const fetchProperty = async () => {
+      if (!id) return;
+      try {
+        const response = await axios.get(`/api/properties/${id}`);
+        setProperty(response.data);
+      } catch (error) {
+        console.error("Error fetching property details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  return (
-    <div className="container mx-auto p-6">
-      {/* Property details */}
-      <PropertyDetail property={property} />
+    fetchProperty();
+  }, [id]);
 
-      {/* Booking Section */}
-      <div className="lg:w-1/3 lg:float-right mt-6 lg:mt-0">
-        <BookingSection price={property.price} />
-      </div>
+  if (loading) {
+    return <p>Loading...</p>;
+  }
 
-      {/* Review Section */}
-      <ReviewSection reviews={property.reviews} />
-    </div>
-  );
+  if (!property) {
+    return <p>Property not found</p>;
+  }
+
+  return <PropertyDetail property={property} />;
 }
